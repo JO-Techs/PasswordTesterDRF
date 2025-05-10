@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .weak {
+            background-color: #ffcccc;
+            border: 1px solid #ff8080;
+        }
+        .average {
+            background-color: #fff2cc;
+            border: 1px solid #ffdb4d;
+        }
+        .strong {
+            background-color: #d9f2d9;
+            border: 1px solid #80cc80;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Password Strength Tester</h1>
+        <div class="form-group">
+            <label for="password">Enter Password:</label>
+            <input type="password" id="password" name="password" autocomplete="off">
+        </div>
+        <button id="test-btn">Test Strength</button>
+        
+        <div id="result">
+            <h3>Password Strength: <span id="strength"></span></h3>
+            <p class="feedback" id="feedback"></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const testBtn = document.getElementById('test-btn');
+            const passwordInput = document.getElementById('password');
+            const resultDiv = document.getElementById('result');
+            const strengthSpan = document.getElementById('strength');
+            const feedbackP = document.getElementById('feedback');
+            
+            testBtn.addEventListener('click', function() {
+                const password = passwordInput.value;
+                
+                if (!password) {
+                    alert('Please enter a password');
+                    return;
+                }
+                
+                fetch('/api/test-password/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove previous classes
+                    resultDiv.classList.remove('weak', 'average', 'strong');
+                    
+                    // Add appropriate class based on strength
+                    resultDiv.classList.add(data.strength.toLowerCase());
+                    
+                    // Update content
+                    strengthSpan.textContent = data.strength;
+                    feedbackP.textContent = data.feedback;
+                    
+                    // Show result
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while testing the password.');
+                });
+            });
+            
+            // Function to get CSRF token from cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
+    </script>
+</body>
+</html>
